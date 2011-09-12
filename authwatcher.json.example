@@ -1,0 +1,1 @@
+{"recipients":["admin@example.com"],"mx":"smtp.example.com","ssh_alertkeys":["acceptkey"],"ssh_alertfields_not":{}}
