@@ -112,7 +112,7 @@ def parseline(line,mail=False):
                     print 'sending out emails to %s through %s as %s - %s'%(recipients,conf['mx'],me,line.strip())
                     for rcpt in recipients:
                         mymail = MIMEText(line)
-                        mymail['Subject'] = '%s - %s'%(host,mk)+(data.get('user') and ': '+data.get('user') or '')
+                        mymail['Subject'] = '%s - %s'%(host,mk)+(data.get('user') and ': '+data.get('user') or '')+(data.get('raddr') and '@'+data.get('raddr') or '')
                         
                         you = rcpt
                         mymail['From'] = me
