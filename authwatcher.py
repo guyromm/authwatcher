@@ -76,7 +76,7 @@ def parseline(line,mail=False):
     stamp = datetime.datetime(y,months2[res.group('month')],int(res.group('day')),int(res.group('hour')),int(res.group('minute')),int(res.group('second')))
     if not earliest or stamp<earliest: earliest = stamp
     if not latest or stamp>latest: latest= stamp
-    myhost = host = res.group('hostname')
+    myhost = host = conf.get('hostname',res.group('hostname'))
     pname = res.group('pname')
     msg = res.group('message')
     if pname not in procs: procs[pname]=0
@@ -108,11 +108,12 @@ def parseline(line,mail=False):
                 
                 if mail and not nomail:
                     domail+=1
-                    me = 'authmon@%s'%host
+                    me = conf.get('mx_sender','authmon@%s'%host)
                     print 'sending out emails to %s through %s as %s - %s'%(recipients,conf['mx'],me,line.strip())
                     for rcpt in recipients:
                         mymail = MIMEText(line)
-                        mymail['Subject'] = 'auth trigger on %s - %s'%(host,mk)
+                        mymail['Subject'] = '%s - %s'%(host,mk)+(data.get('user') and ': '+data.get('user') or '')
+                        
                         you = rcpt
                         mymail['From'] = me
                         mymail['To']=you
@@ -202,14 +203,14 @@ elif len(sys.argv)>1 and sys.argv[1] in ['digest','testdigest','alltimedigest','
     if sys.argv[1] in ['testalltimedigest','testdigest']: 
         print op
         sys.exit (0)
-    me = 'authmon@%s'%myhost
+    me = conf.get('mx_sender','authmon@%s'%myhost)
     print 'sending out emails to %s through %s as %s - %s'%(recipients,conf['mx'],me,line.strip())
     for rcpt in recipients:
         mymail = MIMEText(op)
         if 'alltime' not in sys.argv[1]:
-            mymail['Subject'] = 'auth trigger digest %s for %s'%(myhost,mydate)
+            mymail['Subject'] = 'digest %s for %s'%(myhost,mydate)
         else:
-            mymail['Subject'] = 'auth trigger digest %s for ALLTIME'%(myhost)
+            mymail['Subject'] = 'digest %s for ALLTIME'%(myhost)
         you = rcpt
         mymail['From'] = me
         mymail['To']=you
