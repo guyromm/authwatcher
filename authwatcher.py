@@ -4,6 +4,10 @@
 
 import re,json
 import time,datetime,sys
+import GeoIP
+
+gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
+gi = GeoIP.open("/usr/local/share/GeoLiteCity.dat",GeoIP.GEOIP_STANDARD)
 
 conf = json.loads(open('/etc/authwatcher.json','r').read())
 recipients = conf['recipients']
@@ -29,6 +33,7 @@ loglre = re.compile('^(?P<month>[^ ]+)( +)(?P<day>[^ ]+)( +)(?P<hour>[^ ]+)(\:+)
 msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_cannotlisten>[\d]+)'
           ,'subsystem request for (?P<name_subsystemerror>sftp)'
           ,'error: bind: Address already in use'
+          ,'error: Could not load host key: (?P<hostkey_hostkeyerror>(.*))'
           ,'reverse mapping checking getaddrinfo for (?P<rhost_rmapfail>[^ ]+) \[(?P<raddr_rmapfail>[\d\.]+)\] failed - POSSIBLE BREAK-IN ATTEMPT\!'
           ,'PAM service\(sshd\) ignoring max retries(.*)'
           ,'PAM (?P<num_authfails>[\d]+) more authentication failure(s|); logname= uid=0 euid=0 tty=ssh ruser= rhost=(?P<raddr_authfails>[\w\d\.]+)  user=(?P<user_authfails>[\w]+)'
@@ -46,7 +51,11 @@ msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_
           ,'Accepted (?P<authtype_acceptkey>[\w]+) for (?P<user_acceptkey>[\w\-]+) from (?P<raddr_acceptkey>[\d\.]+) port (?P<rport_acceptkey>[\d]+) ssh2|Did not receive identification string from (?P<raddr_loginout>[\d\.]+)'
           ,'pam_unix\(sshd:session\): session (?P<action_loginout>opened|closed) for user (?P<user_loginout>[\w\-]+)( by \(uid=(?P<uid_loginout>[\d]+)\)|)']
 
+sudoerrmsg = ['(?P<user_resolverr>[\w\-]+) : unable to resolve host (?P<host_resolverr>[\w\-]+)',
+              'cannot execute (?P<cmd_execerr>[^\:]+): (?P<err_execerr>.*)']
+
 shre = re.compile('('+'|'.join(msgres)+')$')
+sudoerrmsgre = re.compile('('+'|'.join(sudoerrmsg)+')$')
 sudore = re.compile('(?P<user>[\w\-]+) : TTY=(?P<tty>[^ ]+) ; PWD=(?P<pwd>[^ ]+) ; USER=(?P<sudouser>[\w\-]+) ; COMMAND=(?P<cmd>.+)$')
 
 y = datetime.datetime.now().year
@@ -54,12 +63,12 @@ months = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep
 months2 = dict([(v, k) for (k, v) in months.iteritems()])
 procs={} ; sshs={} ; accepts = {} ; loginouts = {} ; ssh_details=[]
 failcnt=0 ; goodcnt=0 ; valueskip=0; domail=0
-def failact(line,res):
+def failact(line,res,maxfails=10):
     global failcnt,goodcnt
     if not res:
         print 'BAD PARSE:%s'%line
         failcnt+=1
-        if failcnt>=10: raise Exception('too many failures (%s/%s)'%(failcnt,goodcnt))
+        if failcnt>=maxfails: raise Exception('too many failures (%s/%s)'%(failcnt,goodcnt))
 
 import smtplib
 from email.mime.text import MIMEText
@@ -112,7 +121,13 @@ def parseline(line,mail=False):
                     print 'sending out emails to %s through %s as %s - %s'%(recipients,conf['mx'],me,line.strip())
                     for rcpt in recipients:
                         mymail = MIMEText(line)
-                        mymail['Subject'] = '%s - %s'%(host,mk)+(data.get('user') and ': '+data.get('user') or '')+(data.get('raddr') and '@'+data.get('raddr') or '')
+                        mailsubj = '%s - %s'%(host,mk)+(data.get('user') and ': '+data.get('user') or '')+(data.get('raddr') and '@'+data.get('raddr') or '')                                
+                        if data.get('raddr'):
+                            rec = gi.record_by_addr(data.get('raddr'))
+                            if rec.get('city'): mailsubj+='; city: %s'%rec.get('city')
+                            if rec.get('country_name'): mailsubj+='; country: %s'%rec.get('country_name')
+
+                        mymail['Subject'] = mailsubj
                         
                         you = rcpt
                         mymail['From'] = me
@@ -127,10 +142,13 @@ def parseline(line,mail=False):
             failact(line.strip(),shres)
     elif pname=='sudo':
         sudores = sudore.search(msg)
+        
         if sudores:
             u = sudores.group('user')
         else:
-            failact(line.strip(),sudores)
+            sudoerr = sudoerrmsgre.search(msg)
+            if not sudoerr:
+                failact(line.strip(),sudores,maxfails=100)
 
 def displist(l,title):
     op=''
@@ -145,8 +163,7 @@ def displist(l,title):
 
 if len(sys.argv)>1 and sys.argv[1]=='parseall':
     for line in logfile:
-        parseline(line)
-
+        parseres = parseline(line)
     print 'parsed %s. %s fails. %s value skips on alert. %s domails'%(goodcnt,failcnt,valueskip,domail)
     print displist(procs,'Processes')
     print displist(sshs,'SSH items')

@@ -1,0 +1,15 @@
+INSTALLATION:
+
+put the package in /usr/local/authwatcher
+
+now, to sort out geoip
+
+$ sudo apt-get install python-geoip
+$ cd /usr/local/share && sudo wget 'http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz' && sudo gzip -d GeoLiteCity.dat.gz
+
+put configuration in /etc/authwatcher.json (example provided in authwatcher.json.example)
+
+put ubuntu init script authwatcher.conf in /etc/init/
+
+and 
+$ sudo initctl start authwatcher
