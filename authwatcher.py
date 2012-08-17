@@ -28,8 +28,8 @@ def follow(thefile):
 
 logfile = open("/var/log/auth.log")
 loglre = re.compile('^(?P<month>[^ ]+)( +)(?P<day>[^ ]+)( +)(?P<hour>[^ ]+)(\:+)(?P<minute>[^\:]+)(\:+)(?P<second>[^\: ]+)( +)(?P<hostname>[^ ]+)( +)(?P<pname>[\w]+)(\[(?P<pid>[\d]+)\]|)\: (?P<message>.*)$')
-#Accepted publickey for www-data from 62.219.145.234 port 32159 ssh2
-#reverse mapping checking getaddrinfo for bzq-219-145-234.static.bezeqint.net [62.219.145.234] failed - POSSIBLE BREAK-IN ATTEMPT!
+
+
 msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_cannotlisten>[\d]+)'
           ,'subsystem request for (?P<name_subsystemerror>sftp)'
           ,'error: bind: Address already in use'
@@ -38,21 +38,29 @@ msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_
           ,'PAM service\(sshd\) ignoring max retries(.*)'
           ,'PAM (?P<num_authfails>[\d]+) more authentication failure(s|); logname= uid=0 euid=0 tty=ssh ruser= rhost=(?P<raddr_authfails>[\w\d\.]+)  user=(?P<user_authfails>[\w]+)'
           ,'Address (?P<raddr_doesnotmap>[\d\.]+) maps to (?P<rhost_doesnotmap>[\-\w\.\d]+), but this does not map back to the address - POSSIBLE BREAK-IN ATTEMPT!'
+          ,'pam_unix\(sudo\:session\): session opened for user (?P<sudouser_sessionopened>[\w\-]+) by (?P<user_sessionopened>[\w\-]+)\(uid=(?P<uid_sessionopened>[\d]+)\)'
+          ,'Connection closed by (?P<raddr_connclose>[\d\.]+) \[preauth\]'
+          ,'Disconnecting: Too many authentication failures for (?P<user_authfail>[\w\-]+) \[preauth\]'
           ,'error: Bind to port (?P<port_bindfailed>[\d]+) on (?P<ip_bindfailed>[\d\.\:]+) failed: Address already in use.'
           ,'fatal: Cannot bind any address.'
           ,'Invalid user (?P<user_invaliduser>[\w\-]*) from (?P<raddr_invaliduser>[\d\.]+)'
           ,'pam_unix\(sshd:auth\): check pass; user unknown'
-          ,'Received disconnect from (?P<rhost_disconnect>[\d\.]+): 11: (<?P<reason_disconnect>disconnected by user|Closed due to user request\.)'
+          ,'Received disconnect from (?P<rhost_disconnect>[\d\.]+): (?P<errcode_disconnect>\d+): Unable to authenticate \[preauth\]'
           ,'Received disconnect from (?P<rhost_userdisconnect>[\d\.]+): 11: disconnected by user'
           ,'pam_unix\(sshd:auth\): authentication failure; logname= uid=(?P<uid_failauth>[\d]+) euid=(?P<euid_failauth>[\d]+) tty=ssh ruser= rhost=(?P<raddr_failauth>[\w\d\.]+) ( user=(?P<user_failauth>[\w]+)|)'
           ,'Failed (?P<failedwhat_failpw>[\w]+) for(?P<isinvalid_failpw> invalid user|) (?P<user_failpw>[\w\-]+) from (?P<raddr_failpw>[\d\.]+) port (?P<rport_failpw>[\d]+) ssh2'
           ,'error: connect_to (.*) port (.*): failed.'
           ,'last message repeated (\d+) times'
           ,'Accepted (?P<authtype_acceptkey>[\w]+) for (?P<user_acceptkey>[\w\-]+) from (?P<raddr_acceptkey>[\d\.]+) port (?P<rport_acceptkey>[\d]+) ssh2|Did not receive identification string from (?P<raddr_loginout>[\d\.]+)'
-          ,'pam_unix\(sshd:session\): session (?P<action_loginout>opened|closed) for user (?P<user_loginout>[\w\-]+)( by \(uid=(?P<uid_loginout>[\d]+)\)|)']
+          ,'pam_unix\((?P<bywhom_loginout>sshd|sudo):session\): session (?P<action_loginout>opened|closed) for user (?P<user_loginout>[\w\-]+)( by \(uid=(?P<uid_loginout>[\d]+)\)|)'
+          ,'(?P<user_resolverr>[\w\-]+) : unable to resolve host (?P<host_resolverr>[\w\-]+)'
+          ,'(unable to|cannot) execute (?P<cmd_execerr>[^\:]+): (?P<err_execerr>.*)'
+          ,'([ ]*)(?P<user_cmdexec>[\w\-]+) : TTY=(?P<tty_cmdexec>[\w\-\/]+) ; PWD=(?P<pwd_cmdexec>[\/\w\-]+) ; USER=(?P<sudouser_cmdexec>[\w\-]+) ; COMMAND=(?P<cmd_cmdexec>.+)'
+]
 
-sudoerrmsg = ['(?P<user_resolverr>[\w\-]+) : unable to resolve host (?P<host_resolverr>[\w\-]+)',
-              'cannot execute (?P<cmd_execerr>[^\:]+): (?P<err_execerr>.*)']
+
+
+sudoerrmsg = []
 
 shre = re.compile('('+'|'.join(msgres)+')$')
 sudoerrmsgre = re.compile('('+'|'.join(sudoerrmsg)+')$')
@@ -63,10 +71,14 @@ months = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep
 months2 = dict([(v, k) for (k, v) in months.iteritems()])
 procs={} ; sshs={} ; accepts = {} ; loginouts = {} ; ssh_details=[]
 failcnt=0 ; goodcnt=0 ; valueskip=0; domail=0
-def failact(line,res,maxfails=10):
+def failact(line,res,maxfails=10,message=None):
     global failcnt,goodcnt
     if not res:
-        print 'BAD PARSE:%s'%line
+        if message:
+            import json
+            print 'BAD PARSE MESSAGE:%s'%json.dumps(message)
+        else:
+            print 'BAD PARSE:%s'%line
         failcnt+=1
         if failcnt>=maxfails: raise Exception('too many failures (%s/%s)'%(failcnt,goodcnt))
 
@@ -91,7 +103,7 @@ def parseline(line,mail=False):
     if pname not in procs: procs[pname]=0
     procs[pname]+=1
     goodcnt+=1
-    if pname=='sshd':
+    if pname in ['sshd','sudo']:
         shres = shre.search(msg)
         if shres:
             gd = shres.groupdict()
@@ -139,8 +151,9 @@ def parseline(line,mail=False):
                 #print line.strip()
             #print 'session %s for %s by %s'%(act,user,uid) 
         else:
-            failact(line.strip(),shres)
+            failact(line.strip(),shres,message=msg)
     elif pname=='sudo':
+        raise Exception('unknown pname %s'%pname)
         sudores = sudore.search(msg)
         
         if sudores:
@@ -148,7 +161,7 @@ def parseline(line,mail=False):
         else:
             sudoerr = sudoerrmsgre.search(msg)
             if not sudoerr:
-                failact(line.strip(),sudores,maxfails=100)
+                failact(line.strip(),sudores,maxfails=100,message=msg)
 
 def displist(l,title):
     op=''
