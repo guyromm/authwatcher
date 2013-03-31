@@ -9,7 +9,10 @@ import GeoIP
 gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
 gi = GeoIP.open("/usr/local/share/GeoLiteCity.dat",GeoIP.GEOIP_STANDARD)
 
-conf = json.loads(open('/etc/authwatcher.json','r').read())
+def loadconf():
+    return json.loads(open('/etc/authwatcher.json','r').read())
+
+conf = loadconf()
 recipients = conf['recipients']
 
 tcnt=0
@@ -87,8 +90,11 @@ from email.mime.text import MIMEText
 
 myhost=None
 earliest=None ; latest=None
-def parseline(line,mail=False):
-    global procs,sshs,failcnt,goodcnt,valueskip,domail,myhost,earliest,latest
+def parseline(line,mail=False,reload=False):
+    global procs,sshs,failcnt,goodcnt,valueskip,domail,myhost,earliest,latest,conf
+    #reload my configuration every time.
+    if reload: 
+        conf = loadconf()
     res = loglre.search(line)
     failact(line,res)
     if not res: 
@@ -269,4 +275,4 @@ else:
     #print '%s.%s'%(pname,stamp)
     loglines = follow(logfile)
     for line in loglines:
-        parseline(line,mail=True)
+        parseline(line,mail=True,reload=True)
