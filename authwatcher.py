@@ -26,7 +26,7 @@ def follow(thefile):
              continue
          yield line
 
-logfile = open("/var/log/auth.log")
+logfile = open(conf.get('auth_log',"/var/log/auth.log"))
 loglre = re.compile('^(?P<month>[^ ]+)( +)(?P<day>[^ ]+)( +)(?P<hour>[^ ]+)(\:+)(?P<minute>[^\:]+)(\:+)(?P<second>[^\: ]+)( +)(?P<hostname>[^ ]+)( +)(?P<pname>[\w]+)(\[(?P<pid>[\d]+)\]|)\: (?P<message>.*)$')
 
 
@@ -117,16 +117,33 @@ def parseline(line,mail=False):
                     sshs[mk]+=1
             data['stamp']=stamp
             data['tp']=mk
+            if data.get('raddr'):
+                rec = gi.record_by_addr(data.get('raddr'))
+                if rec:
+                    data['city']=rec.get('city',None)
+                    data['country_name']=rec.get('country_name',None)
+                else:
+                    data['city']=None ; data['country_name']=None
             ssh_details.append(data)
             if mk in conf['ssh_alertkeys']:
                 nomail=False
+                
                 for dk,dv in data.items():
                     if dk in conf['ssh_alertfields_not'] and re.compile(conf['ssh_alertfields_not'][dk]).search(dv):
                         #skip this alert
                         nomail=True
                         valueskip+=1
                         break
-                
+                    for mr,mdo in conf.get('mailrules',{}).items():
+                        def mrev(mr,data):
+                            #exec '\n'.join("%s=%r"%i for i in data.items())
+                            return eval(mr,None,data)
+                        res = mrev(mr,data)
+                        if res:
+                            print 'nomail = ! %s (%s) for %s'%(mdo,mr,data)
+                            nomail = not mdo
+                            break
+                        
                 if mail and not nomail:
                     domail+=1
                     me = conf.get('mx_sender','authmon@%s'%host)
@@ -134,10 +151,9 @@ def parseline(line,mail=False):
                     for rcpt in recipients:
                         mymail = MIMEText(line)
                         mailsubj = '%s - %s'%(host,mk)+(data.get('user') and ': '+data.get('user') or '')+(data.get('raddr') and '@'+data.get('raddr') or '')                                
-                        if data.get('raddr'):
-                            rec = gi.record_by_addr(data.get('raddr'))
-                            if rec.get('city'): mailsubj+='; city: %s'%rec.get('city')
-                            if rec.get('country_name'): mailsubj+='; country: %s'%rec.get('country_name')
+
+                        if data.get('city'): mailsubj+='; city: %s'%data.get('city')
+                        if data.get('country_name'): mailsubj+='; country: %s'%data.get('country_name')
 
                         mymail['Subject'] = mailsubj
                         
