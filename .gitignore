@@ -1,3 +1,5 @@
 *~
 authwatcher.json
 *.tmp
+*.pyc
+venv

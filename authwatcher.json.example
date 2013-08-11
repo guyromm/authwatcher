@@ -1,1 +1,8 @@
-{"recipients":["admin@example.com"],"mx":"smtp.example.com","ssh_alertkeys":["acceptkey"],"ssh_alertfields_not":{}}
+{"hostname":"%(hostname)s",
+        "recipients":["%(recipient)s"],
+        "mx":"%(mx_host)s",
+        "mx_user":"%(mx_user)s",
+        "mx_password":"%(mx_password)s",
+        "mx_sender":"%(mx_sender)s",
+        "ssh_alertkeys":["acceptkey"],
+        "ssh_alertfields_not":{}}
