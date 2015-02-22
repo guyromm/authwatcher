@@ -30,7 +30,7 @@ def follow(thefile):
          yield line
 
 logfile = open(conf.get('auth_log',"/var/log/auth.log"))
-loglre = re.compile('^(?P<month>[^ ]+)( +)(?P<day>[^ ]+)( +)(?P<hour>[^ ]+)(\:+)(?P<minute>[^\:]+)(\:+)(?P<second>[^\: ]+)( +)(?P<hostname>[^ ]+)( +)(?P<pname>[\w]+)(\[(?P<pid>[\d]+)\]|)\: (?P<message>.*)$')
+loglre = re.compile('^(?P<month>[^ ]+)( +)(?P<day>[^ ]+)( +)(?P<hour>[^ ]+)(\:+)(?P<minute>[^\:]+)(\:+)(?P<second>[^\: ]+)( +)(?P<hostname>[^ ]*)( +)(?P<pname>[\w]+)(\[(?P<pid>[\d]+)\]|)\: (?P<message>.*)$')
 
 
 msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_cannotlisten>[\d]+)'
@@ -47,9 +47,11 @@ msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_
           ,'error: Bind to port (?P<port_bindfailed>[\d]+) on (?P<ip_bindfailed>[\d\.\:]+) failed: Address already in use.'
           ,'fatal: Cannot bind any address.'
           ,'Invalid user (?P<user_invaliduser>[\w\-]*) from (?P<raddr_invaliduser>[\d\.]+)'
+          ,'input_userauth_request: invalid user (?P<user_invaliduser2>[\w]+) \[preauth\]'
           ,'pam_unix\(sshd:auth\): check pass; user unknown'
-          ,'Received disconnect from (?P<rhost_disconnect>[\d\.]+): (?P<errcode_disconnect>\d+): Unable to authenticate \[preauth\]'
-          ,'Received disconnect from (?P<rhost_userdisconnect>[\d\.]+): 11: disconnected by user'
+          ,'Received disconnect from (?P<rhost_disconnect>[\d\.]+): (?P<errcode_disconnect>\d+): (?P<disconnect_reason>[\w]*) \[preauth\]'
+          ,'Received disconnect from (?P<rhost_userdisconnect>[\d\.]+): 11: (?P<disconnect2_reason>[\w]*)'
+          ,'Received disconnect from (?P<rhost_userdisconnect2>[\d\.]+): (?P<disconnect3_code>\d+): (?P<disconnect3_reason>[\w ]*) \[preauth\]'
           ,'pam_unix\(sshd:auth\): authentication failure; logname= uid=(?P<uid_failauth>[\d]+) euid=(?P<euid_failauth>[\d]+) tty=ssh ruser= rhost=(?P<raddr_failauth>[\w\d\.]+) ( user=(?P<user_failauth>[\w]+)|)'
           ,'Failed (?P<failedwhat_failpw>[\w]+) for(?P<isinvalid_failpw> invalid user|) (?P<user_failpw>[\w\-]+) from (?P<raddr_failpw>[\d\.]+) port (?P<rport_failpw>[\d]+) ssh2'
           ,'error: connect_to (.*) port (.*): failed.'
@@ -144,12 +146,14 @@ def parseline(line,mail=False,reload=False):
                         def mrev(mr,data):
                             #exec '\n'.join("%s=%r"%i for i in data.items())
                             return eval(mr,None,data)
+
                         res = mrev(mr,data)
+                        print('mrev(%s,%s) => %s'%(mr,data,res))
                         if res:
                             print 'nomail = ! %s (%s) for %s'%(mdo,mr,data)
                             nomail = not mdo
                             break
-                        
+                
                 if mail and not nomail:
                     domail+=1
                     me = conf.get('mx_sender','authmon@%s'%host)
@@ -198,7 +202,7 @@ def displist(l,title):
 
 if len(sys.argv)>1 and sys.argv[1]=='parseall':
     for line in logfile:
-        parseres = parseline(line)
+        parseres = parseline(line,mail='mail' in sys.argv[1:])
     print 'parsed %s. %s fails. %s value skips on alert. %s domails'%(goodcnt,failcnt,valueskip,domail)
     print displist(procs,'Processes')
     print displist(sshs,'SSH items')
