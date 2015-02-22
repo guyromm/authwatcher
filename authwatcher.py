@@ -48,6 +48,7 @@ msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_
           ,'Disconnecting: Too many authentication failures for (?P<user_authfail>[\w\-]+) \[preauth\]'
           ,'error: Bind to port (?P<port_bindfailed>[\d]+) on (?P<ip_bindfailed>[\d\.\:]+) failed: Address already in use.'
           ,'fatal: Cannot bind any address.'
+          ,'fatal: Read from socket failed: Connection reset by peer \[preauth\]'
           ,'Invalid user (?P<user_invaliduser>[\w\-]*) from (?P<raddr_invaliduser>[\d\.]+)'
           ,'input_userauth_request: invalid user (?P<user_invaliduser2>[\w]+) \[preauth\]'
           ,'pam_unix\(sshd:auth\): check pass; user unknown'
