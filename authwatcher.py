@@ -40,7 +40,7 @@ msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_
           ,'error: Could not load host key: (?P<hostkey_hostkeyerror>(.*))'
           ,'reverse mapping checking getaddrinfo for (?P<rhost_rmapfail>[^ ]+) \[(?P<raddr_rmapfail>[\d\.]+)\] failed - POSSIBLE BREAK-IN ATTEMPT\!'
           ,'PAM service\(sshd\) ignoring max retries(.*)'
-          ,'PAM (?P<num_authfails>[\d]+) more authentication failure(s|); logname= uid=0 euid=0 tty=ssh ruser= rhost=(?P<raddr_authfails>[\w\d\.]+)  user=(?P<user_authfails>[\w]+)'
+          ,'PAM (?P<num_authfails>[\d]+) more authentication failure(s|); logname= uid=0 euid=0 tty=ssh ruser= rhost=(?P<raddr_authfails>[\w\d\.]+) (| user=(?P<user_authfails>[\w]+))'
           ,'Address (?P<raddr_doesnotmap>[\d\.]+) maps to (?P<rhost_doesnotmap>[\-\w\.\d]+), but this does not map back to the address - POSSIBLE BREAK-IN ATTEMPT!'
           ,'pam_unix\(sudo\:session\): session opened for user (?P<sudouser_sessionopened>[\w\-]+) by (?P<user_sessionopened>[\w\-]+)\(uid=(?P<uid_sessionopened>[\d]+)\)'
           ,'Connection closed by (?P<raddr_connclose>[\d\.]+) \[preauth\]'
