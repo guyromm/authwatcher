@@ -2,9 +2,10 @@ from fabric.api import *
 import fabric.contrib.files
 import json
 import StringIO
+import os
 env.use_ssh_config = True
 
-def install(recipient,mx_user,mx_password,mx_sender,mx_host,hostname=None):
+def install(recipient=None,mx_user=None,mx_password=None,mx_sender=None,mx_host=None,hostname=None):
     if not hostname:
         hostname = run('hostname').strip()
     print 'using hostname %s'%mx_host
@@ -20,7 +21,11 @@ def install(recipient,mx_user,mx_password,mx_sender,mx_host,hostname=None):
             'mx_sender':mx_sender,
             'mx_host':mx_host,
             'hostname':hostname}
-    jsonconf = open('authwatcher.json.example','r').read()%args
+    if (os.path.exists('authwatcher.json')):
+        jsonconf = open('authwatcher.json','r').read()
+    else:
+        assert args['recipient']
+        jsonconf = open('authwatcher.json.example','r').read()%args
     assert json.loads(jsonconf)
     put(StringIO.StringIO(jsonconf),'/etc/authwatcher.json.install',use_sudo=True)
     with settings(warn_only=True):

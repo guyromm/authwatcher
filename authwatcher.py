@@ -35,6 +35,7 @@ loglre = re.compile('^(?P<month>[^ ]+)( +)(?P<day>[^ ]+)( +)(?P<hour>[^ ]+)(\:+)
 
 msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_cannotlisten>[\d]+)'
           ,'subsystem request for (?P<name_subsystemerror>sftp)'
+          ,'subsystem request for (?P<name_subsystemerror>sftp) by user (?P<user_subsystemerror>[\w]+)'
           ,'error: bind: Address already in use'
           ,'error: Could not load host key: (?P<hostkey_hostkeyerror>(.*))'
           ,'reverse mapping checking getaddrinfo for (?P<rhost_rmapfail>[^ ]+) \[(?P<raddr_rmapfail>[\d\.]+)\] failed - POSSIBLE BREAK-IN ATTEMPT\!'
