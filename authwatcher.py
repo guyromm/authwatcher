@@ -56,7 +56,7 @@ msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_
           ,'pam_unix\(sshd:auth\): authentication failure; logname= uid=(?P<uid_failauth>[\d]+) euid=(?P<euid_failauth>[\d]+) tty=ssh ruser= rhost=(?P<raddr_failauth>[\w\d\.]+) ( user=(?P<user_failauth>[\w]+)|)'
           ,'Failed (?P<failedwhat_failpw>[\w]+) for(?P<isinvalid_failpw> invalid user|) (?P<user_failpw>[\w\-]+) from (?P<raddr_failpw>[\d\.]+) port (?P<rport_failpw>[\d]+) ssh2'
           ,'error: connect_to (.*) port (.*): failed.'
-          ,'last message repeated (\d+) times(|: \[(?P<msgrepeat_msg>.*)\])'
+          ,'(last |)message repeated (\d+) times(|: \[(?P<msgrepeat_msg>.*)\])'
           ,'Accepted (?P<authtype_acceptkey>[\w]+) for (?P<user_acceptkey>[\w\-]+) from (?P<raddr_acceptkey>[\d\.]+) port (?P<rport_acceptkey>[\d]+) ssh2|Did not receive identification string from (?P<raddr_loginout>[\d\.]+)'
           ,'pam_unix\((?P<bywhom_loginout>sshd|sudo):session\): session (?P<action_loginout>opened|closed) for user (?P<user_loginout>[\w\-]+)( by \(uid=(?P<uid_loginout>[\d]+)\)|)'
           ,'(?P<user_resolverr>[\w\-]+) : unable to resolve host (?P<host_resolverr>[\w\-]+)'
