@@ -53,7 +53,7 @@ msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_
           ,'Received disconnect from (?P<rhost_disconnect>[\d\.]+): (?P<errcode_disconnect>\d+): (?P<disconnect_reason>[\w]*) \[preauth\]'
           ,'Received disconnect from (?P<rhost_userdisconnect>[\d\.]+): 11: (?P<disconnect2_reason>[\w]*)'
           ,'Received disconnect from (?P<rhost_userdisconnect2>[\d\.]+): (?P<disconnect3_code>\d+): (?P<disconnect3_reason>[\w ]*) \[preauth\]'
-          ,'pam_unix\(sshd:auth\): authentication failure; logname= uid=(?P<uid_failauth>[\d]+) euid=(?P<euid_failauth>[\d]+) tty=ssh ruser= rhost=(?P<raddr_failauth>[\w\d\.]+) ( user=(?P<user_failauth>[\w]+)|)'
+          ,'pam_unix\(sshd:auth\): authentication failure; logname= uid=(?P<uid_failauth>[\d]+) euid=(?P<euid_failauth>[\d]+) tty=ssh ruser= rhost=(?P<raddr_failauth>[\w\d\.\-]+) ( user=(?P<user_failauth>[\w]+)|)'
           ,'Failed (?P<failedwhat_failpw>[\w]+) for(?P<isinvalid_failpw> invalid user|) (?P<user_failpw>[\w\-]+) from (?P<raddr_failpw>[\d\.]+) port (?P<rport_failpw>[\d]+) ssh2'
           ,'error: connect_to (.*) port (.*): failed.'
           ,'(last |)message repeated (\d+) times(|: \[(?P<msgrepeat_msg>.*)\])'
