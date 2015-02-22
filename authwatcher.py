@@ -59,7 +59,7 @@ msgres = ['error: channel_setup_fwd_listener: cannot listen to port\: (?P<lport_
           ,'Failed (?P<failedwhat_failpw>[\w]+) for(?P<isinvalid_failpw> invalid user|) (?P<user_failpw>[\w\-]+) from (?P<raddr_failpw>[\d\.]+) port (?P<rport_failpw>[\d]+) ssh2'
           ,'error: connect_to (.*) port (.*): failed.'
           ,'(last |)message repeated (\d+) times(|: \[(?P<msgrepeat_msg>.*)\])'
-          ,'Accepted (?P<authtype_acceptkey>[\w]+) for (?P<user_acceptkey>[\w\-]+) from (?P<raddr_acceptkey>[\d\.]+) port (?P<rport_acceptkey>[\d]+) ssh2(\|Did not receive identification string from (?P<raddr_loginout>[\d\.]+)|: (?P<keytype_acceptkey>[\w]+) (?P<keyfingerprint_acceptkey>([0-9a-f\:]+))'
+          ,'Accepted (?P<authtype_acceptkey>[\w]+) for (?P<user_acceptkey>[\w\-]+) from (?P<raddr_acceptkey>[\d\.]+) port (?P<rport_acceptkey>[\d]+) ssh2(|Did not receive identification string from (?P<raddr_loginout>[\d\.]+)|: (?P<keytype_acceptkey>[\w]+) (?P<keyfingerprint_acceptkey>([0-9a-f\:]+)))'
           ,'pam_unix\((?P<bywhom_loginout>sshd|sudo):session\): session (?P<action_loginout>opened|closed) for user (?P<user_loginout>[\w\-]+)( by \(uid=(?P<uid_loginout>[\d]+)\)|)'
           ,'(?P<user_resolverr>[\w\-]+) : unable to resolve host (?P<host_resolverr>[\w\-]+)'
           ,'(unable to|cannot) execute (?P<cmd_execerr>[^\:]+): (?P<err_execerr>.*)'
